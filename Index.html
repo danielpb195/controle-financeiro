@@ -4,10 +4,138 @@
   <meta charset="UTF-8">
   <title>Controle Financeiro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    h1 {
+      color: gold;
+      text-align: center;
+    }
+
+    select, input, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
+
+    select, input {
+      background: #222;
+      color: #fff;
+    }
+
+    button {
+      background: gold;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #d4af37;
+    }
+
+    .card {
+      background: #1c1c1c;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 10px;
+      border-left: 5px solid gold;
+    }
+
+    .entrada {
+      border-left-color: #00c853;
+    }
+
+    .saida {
+      border-left-color: #d50000;
+    }
+  </style>
 </head>
 <body>
-  <h1 style="text-align:center; margin-top:50px;">
-    Controle Financeiro Funcionando 🚀
-  </h1>
+
+<h1>Controle Financeiro</h1>
+
+<select id="tipo">
+  <option value="entrada">Entrada</option>
+  <option value="saida">Saída</option>
+</select>
+
+<input type="text" id="descricao" placeholder="Descrição (ex: Jolimont)">
+<input type="number" id="valor" placeholder="Valor">
+<button onclick="salvar()">Salvar</button>
+
+<div id="lista"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // 🔑 Substitua pelos seus dados do Firebase
+  const firebaseConfig = {
+    apiKey: "COLE_AQUI",
+    authDomain: "COLE_AQUI",
+    projectId: "COLE_AQUI",
+    storageBucket: "COLE_AQUI",
+    messagingSenderId: "COLE_AQUI",
+    appId: "COLE_AQUI"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  async function salvar() {
+    const tipo = document.getElementById("tipo").value;
+    const descricao = document.getElementById("descricao").value;
+    const valor = parseFloat(document.getElementById("valor").value);
+
+    if (!descricao || !valor) {
+      alert("Preencha todos os campos");
+      return;
+    }
+
+    await addDoc(collection(db, "movimentacoes"), {
+      tipo,
+      descricao,
+      valor,
+      data: new Date()
+    });
+
+    alert("Salvo com sucesso!");
+
+    document.getElementById("descricao").value = "";
+    document.getElementById("valor").value = "";
+
+    listar();
+  }
+
+  async function listar() {
+    const querySnapshot = await getDocs(collection(db, "movimentacoes"));
+    const lista = document.getElementById("lista");
+    lista.innerHTML = "";
+
+    querySnapshot.forEach((doc) => {
+      const item = doc.data();
+      lista.innerHTML += `
+        <div class="card ${item.tipo}">
+          <strong>${item.tipo.toUpperCase()}</strong><br>
+          ${item.descricao}<br>
+          R$ ${item.valor.toFixed(2)}
+        </div>
+      `;
+    });
+  }
+
+  listar();
+</script>
+
 </body>
 </html>
