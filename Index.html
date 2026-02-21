@@ -1,140 +1,103 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Controle Financeiro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Controle Financeiro VIP</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body {
-      background-color: #111;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-
-    h1 {
-      color: gold;
-      text-align: center;
-    }
-
-    select, input, button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
-    }
-
-    select, input {
-      background: #222;
-      color: #fff;
-    }
-
-    button {
-      background: gold;
-      color: #000;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #d4af37;
-    }
-
-    .card {
-      background: #1c1c1c;
-      padding: 15px;
-      margin-top: 15px;
-      border-radius: 10px;
-      border-left: 5px solid gold;
-    }
-
-    .entrada {
-      border-left-color: #00c853;
-    }
-
-    .saida {
-      border-left-color: #d50000;
-    }
-  </style>
+<style>
+body {background-color:#111;color:#fff;font-family:Arial;padding:20px;}
+h1,h2 {color:gold;text-align:center;}
+input,select,button {width:100%;padding:12px;margin:5px 0;border-radius:8px;border:none;font-size:16px;}
+input,select {background:#222;color:#fff;}
+button {background:gold;color:#000;font-weight:bold;cursor:pointer;}
+button:hover{background:#d4af37;}
+.card{background:#1c1c1c;padding:15px;margin-top:10px;border-radius:10px;border-left:5px solid gold;}
+.entrada{border-left-color:#00c853;}
+.saida{border-left-color:#d50000;}
+.progress-bar {width:100%;background:#222;border-radius:10px;margin:5px 0;}
+.progress {height:20px;background:gold;width:0%;border-radius:10px;}
+</style>
 </head>
 <body>
 
-<h1>Controle Financeiro</h1>
+<h1>Controle Financeiro VIP</h1>
 
-<select id="tipo">
-  <option value="entrada">Entrada</option>
-  <option value="saida">Saída</option>
-</select>
-
-<input type="text" id="descricao" placeholder="Descrição (ex: Jolimont)">
+<h2>Registrar Movimentação</h2>
+<select id="tipo"><option value="entrada">Entrada</option><option value="saida">Saída</option></select>
+<input type="text" id="descricao" placeholder="Descrição / Origem (ex: Jolimont)">
 <input type="number" id="valor" placeholder="Valor">
 <button onclick="salvar()">Salvar</button>
 
+<h2>Resumo</h2>
+<div id="resumo">
+  Faturamento Bruto: R$ <span id="bruto">0.00</span><br>
+  Despesas: R$ <span id="gastos">0.00</span><br>
+  Lucro: R$ <span id="lucro">0.00</span><br>
+  Meta Mensal: R$ <input type="number" id="meta" value="10000" onchange="atualizarResumo()">
+  <div class="progress-bar"><div class="progress" id="barraMeta"></div></div>
+  Ticket Médio: R$ <span id="ticketMedio">0.00</span>
+</div>
+
+<h2>Movimentações</h2>
 <div id="lista"></div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // 🔑 Substitua pelos seus dados do Firebase
-  const firebaseConfig = {
-    apiKey: "COLE_AQUI",
-    authDomain: "COLE_AQUI",
-    projectId: "COLE_AQUI",
-    storageBucket: "COLE_AQUI",
-    messagingSenderId: "COLE_AQUI",
-    appId: "COLE_AQUI"
-  };
+// Substitua pelos seus dados
+const firebaseConfig = {
+  apiKey: "COLE_AQUI",
+  authDomain: "COLE_AQUI",
+  projectId: "COLE_AQUI",
+  storageBucket: "COLE_AQUI",
+  messagingSenderId: "COLE_AQUI",
+  appId: "COLE_AQUI"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  async function salvar() {
-    const tipo = document.getElementById("tipo").value;
-    const descricao = document.getElementById("descricao").value;
-    const valor = parseFloat(document.getElementById("valor").value);
-
-    if (!descricao || !valor) {
-      alert("Preencha todos os campos");
-      return;
-    }
-
-    await addDoc(collection(db, "movimentacoes"), {
-      tipo,
-      descricao,
-      valor,
-      data: new Date()
-    });
-
-    alert("Salvo com sucesso!");
-
-    document.getElementById("descricao").value = "";
-    document.getElementById("valor").value = "";
-
-    listar();
-  }
-
-  async function listar() {
-    const querySnapshot = await getDocs(collection(db, "movimentacoes"));
-    const lista = document.getElementById("lista");
-    lista.innerHTML = "";
-
-    querySnapshot.forEach((doc) => {
-      const item = doc.data();
-      lista.innerHTML += `
-        <div class="card ${item.tipo}">
-          <strong>${item.tipo.toUpperCase()}</strong><br>
-          ${item.descricao}<br>
-          R$ ${item.valor.toFixed(2)}
-        </div>
-      `;
-    });
-  }
-
+async function salvar(){
+  const tipo = document.getElementById("tipo").value;
+  const descricao = document.getElementById("descricao").value;
+  const valor = parseFloat(document.getElementById("valor").value);
+  if(!descricao || !valor){alert("Preencha todos os campos"); return;}
+  await addDoc(collection(db,"movimentacoes"),{tipo,descricao,valor,data:new Date()});
+  document.getElementById("descricao").value=""; document.getElementById("valor").value="";
   listar();
+}
+
+async function listar(){
+  const querySnapshot = await getDocs(collection(db,"movimentacoes"));
+  const lista = document.getElementById("lista");
+  lista.innerHTML="";
+
+  let bruto=0, gastos=0, countEntradas=0;
+  querySnapshot.forEach(doc=>{
+    const item = doc.data();
+    lista.innerHTML+=`<div class="card ${item.tipo}"><strong>${item.tipo.toUpperCase()}</strong><br>${item.descricao}<br>R$ ${item.valor.toFixed(2)}</div>`;
+    if(item.tipo=="entrada"){bruto+=item.valor;countEntradas++;}
+    else{gastos+=item.valor;}
+  });
+
+  document.getElementById("bruto").innerText=bruto.toFixed(2);
+  document.getElementById("gastos").innerText=gastos.toFixed(2);
+  document.getElementById("lucro").innerText=(bruto-gastos).toFixed(2);
+  document.getElementById("ticketMedio").innerText=(countEntradas>0?bruto/countEntradas:0).toFixed(2);
+
+  atualizarResumo();
+}
+
+function atualizarResumo(){
+  const meta = parseFloat(document.getElementById("meta").value)||0;
+  const bruto = parseFloat(document.getElementById("bruto").innerText)||0;
+  const perc = meta>0?Math.min((bruto/meta)*100,100):0;
+  document.getElementById("barraMeta").style.width=perc+"%";
+}
+
+listar();
 </script>
 
 </body>
